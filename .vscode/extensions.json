@@ -1,0 +1,12 @@
+{
+    "recommendations": [
+        "johnsoncodehk.volar",
+        "formulahendry.auto-close-tag",
+        "coenraads.bracket-pair-colorizer-2",
+        "antfu.iconify",
+        "esbenp.prettier-vscode",
+        "bradlc.vscode-tailwindcss",
+        "stylelint.vscode-stylelint",
+        "huizhou.githd"
+    ]
+}
