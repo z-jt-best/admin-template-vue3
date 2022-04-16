@@ -1,6 +1,6 @@
 # 项目注意事项
 
-后台管理系统模板项目, 以下为该项目的开发规范, 在开发前请先阅读.
+该项目是基于(vue-vben-admin)[https://github.com/vbenjs/vue-vben-admin]项目手撸的 vue3 项目。
 
 ## VScode 需要的插件
 
