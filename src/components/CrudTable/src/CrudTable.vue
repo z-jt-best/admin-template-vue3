@@ -291,6 +291,7 @@ export default defineComponent({
             selectOptions = getBaseOption(props.rowSelection)
         }
 
+        // TODO => 这里的多选删除应该在curdHook里面实现的，但是现在没有相应的接口，就交给父组件处理
         const handleMulDel = () => {
             context.emit('mulDel', selectedRowKeys.value, selectedRows.value)
         }
