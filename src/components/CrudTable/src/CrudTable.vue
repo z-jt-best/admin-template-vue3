@@ -13,20 +13,28 @@
             </div>
         </slot>
         <slot name="create" :create-data="createData" :show-modal="showModal">
-            <div v-if="create" class="bg-white mx-3 p-4">
-                <a-button @click="showModal('create')" type="primary">
-                    <template #icon>
-                        <PlusOutlined />
-                    </template>
-                    新增
-                </a-button>
+            <div class="bg-white mx-3" :class="{ 'p-4': create || select }">
+                <Space>
+                    <a-button v-if="create" @click="showModal('create')" type="primary">
+                        <template #icon>
+                            <PlusOutlined />
+                        </template>
+                        新增
+                    </a-button>
+                    <a-button v-if="select" type="primary" danger :disabled="selectedRowKeys.length === 0" @click="handleMulDel">
+                        <template #icon>
+                            <DeleteOutlined />
+                        </template>
+                        批量删除
+                    </a-button>
+                </Space>
             </div>
         </slot>
         <div ref="tableWrapRef" class="mx-3 mb-3" style="flex: 1; overflow-y: hidden">
             <Table
                 ref="tableRef"
+                :rowSelection="select ? selectOptions : null"
                 :rowKey="rowKey"
-                :rowSelection="select ? selectOptions(rowSelection) : null"
                 :loading="loading"
                 :columns="processCol"
                 :data-source="tableData"
@@ -94,8 +102,8 @@
 </template>
 
 <script>
-import { defineComponent, ref, toRefs, unref, reactive, computed, watch, onMounted, onUnmounted, watchEffect, toRaw, nextTick } from 'vue'
-import { Table, Pagination, Row, Divider, Modal, Card } from 'ant-design-vue'
+import { defineComponent, ref, computed, watch, onMounted, onUnmounted, toRaw, nextTick } from 'vue'
+import { Table, Pagination, Row, Divider, Modal, Card, Space } from 'ant-design-vue'
 import { any, array, bool, func, number, object, oneOfType, string } from 'vue-types'
 import { cloneDeep } from 'lodash-es'
 import { PlusOutlined, DeleteOutlined, EditOutlined } from '@ant-design/icons-vue'
@@ -106,11 +114,11 @@ import JsonForm from '@/components/JsonForm'
 import { isEmpty } from '@/utils/types'
 import { useCrud } from '@/hook/useCrud'
 
-import { selectData, selectRow, selectOptions, resetSelectedData } from './CrudHook'
+import { useSelectHook } from './CrudHook'
 
 export default defineComponent({
     name: 'CrudTable',
-    components: { Table, Column: Table.Column, JsonForm, Pagination, Row, Divider, Modal, Card, PlusOutlined, DeleteOutlined, EditOutlined },
+    components: { Table, Column: Table.Column, JsonForm, Pagination, Row, Divider, Modal, Card, PlusOutlined, DeleteOutlined, EditOutlined, Space },
     props: {
         full: bool().def(true), // 是否启用满屏
         rowKey: oneOfType([string(), func()]).def('id'), // table的rowKey
@@ -132,7 +140,6 @@ export default defineComponent({
         jsonFields: array().def([]), // 查询表单
         timeFields: array().def([]), // 时间字段数组, 后面会对时间字段进行统一处理
         timeFormat: string().def('YYYY-MM-DD'), // 时间字段格式
-        shouldTimeRangeExpand: bool().def(false), // 是否将时间段扩张到第一天的 00:00:00 至最后一天的 23:59:59，具体见下方说明
         modalFormRef: any(), // modal的Form表单实例, 如果使用到modal Form时必须传递, 用其进行参数校验
         modalWidth: number().def(850), // modal的宽度
         beforeSubmit: func(), // update && create 前的执行函数
@@ -141,7 +148,7 @@ export default defineComponent({
         fixedParams: object().def({}), // 固定参数, 会传递给查询
         modalArgs: object().def({}) // modal的参数
     },
-    emits: ['success', 'modal', 'getSuccess', 'getFail', 'delSuc', 'delFail'],
+    emits: ['success', 'modal', 'getSuccess', 'getFail', 'delSuc', 'delFail', 'mulDel'],
     setup(props, context) {
         const appStore = useAppStore()
 
@@ -172,15 +179,6 @@ export default defineComponent({
         const beforeSearch = params => {
             const data = cloneDeep(params)
             for (let field of props.timeFields) {
-                // dayjs('2022-02-02').format('YYYY-MM-DD HH:mm:ss')
-                // 会自动将时分秒补全为此方法运行时的时分秒如 09:58:14
-                // 需要手动设为 00:00:00 或 23:59:59
-                // 有的接口要精确到秒，有的只要精确到日
-                if (props.shouldTimeRangeExpand && data[field] && data[field].length) {
-                    data[field][0] = data[field][0].hour(0).minute(0).second(0)
-                    data[field][1] = data[field][1].hour(23).minute(59).second(59)
-                }
-
                 data[`start${field.replace(field[0], field[0].toUpperCase())}`] =
                     data[field] && data[field].length ? data[field][0].format(props.timeFormat) : ''
                 data[`end${field.replace(field[0], field[0].toUpperCase())}`] =
@@ -286,14 +284,22 @@ export default defineComponent({
             }
         )
 
+        /** 多选部分 **/
+        let selectOptions = null
+        const { selectedRowKeys, selectedRows, getBaseOption, resetSelected } = useSelectHook()
+        if (props.select) {
+            selectOptions = getBaseOption(props.rowSelection)
+        }
+
+        const handleMulDel = () => {
+            context.emit('mulDel', selectedRowKeys.value, selectedRows.value)
+        }
+
         onMounted(() => {
             props.read && getTableData()
         })
 
-        // 如果启用了select，在卸载组件时重置数据，避免多个页面数据冲突
-        onUnmounted(() => {
-            props.select && resetSelectedData()
-        })
+        onUnmounted(() => {})
 
         return {
             tableWrapRef,
@@ -320,12 +326,14 @@ export default defineComponent({
             updateData,
             createData,
             isEmpty,
-            ...toRefs(selectData),
-            selectRow,
             getTableData,
-            selectOptions,
             toggleModal,
-            handleDel
+            handleDel,
+            selectOptions,
+            selectedRowKeys,
+            selectedRows,
+            resetSelected,
+            handleMulDel
         }
     }
 })

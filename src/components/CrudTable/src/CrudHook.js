@@ -2,37 +2,54 @@
  * crud table逻辑
  */
 
-import { reactive, toRef } from 'vue'
+import { reactive, toRefs, toRef } from 'vue'
+import { assign } from 'lodash-es'
+import { Table } from 'ant-design-vue'
 
 /**
- *  table多选部分
+ *  table多选Hook
  */
 
-// 多选配置
-export const selectOptions = options => {
-    const defaultOptions = {
-        fixed: true,
-        selectedRowKeys: toRef(selectData, 'selectedRowKeys'),
-        onChange: selectRow,
-        preserveSelectedRowKeys: true
+function useSelectHook() {
+    const selectData = reactive({
+        selectedRowKeys: [],
+        selectedRows: []
+    })
+
+    // 选中数据的回调
+    const handleSelectRow = (selectedRowKeys, selectedRows) => {
+        selectData.selectedRowKeys = selectedRowKeys
+        selectData.selectedRows = selectedRows
     }
-    return options ? options : defaultOptions
+
+    // 获取select的基本配置
+    const getBaseOption = options => {
+        const baseOption = {
+            fixed: true,
+            columnWidth: 50,
+            selectedRowKeys: toRef(selectData, 'selectedRowKeys'),
+            onChange: handleSelectRow,
+            preserveSelectedRowKeys: true,
+            selections: [Table.SELECTION_ALL, Table.SELECTION_INVERT, Table.SELECTION_NONE]
+        }
+
+        if (options) {
+            assign(baseOption, options)
+        }
+        return baseOption
+    }
+
+    // 清空选择的数据
+    const resetSelected = () => {
+        selectData.selectedRowKeys = []
+        selectData.selectedRows = []
+    }
+
+    return {
+        ...toRefs(selectData),
+        getBaseOption,
+        resetSelected
+    }
 }
 
-// 选中的数据
-export const selectData = reactive({
-    selectedRowKeys: [],
-    selectedRows: []
-})
-
-// 重置数据
-export const resetSelectedData = () => {
-    selectData.selectedRowKeys = []
-    selectData.selectedRows = []
-}
-
-// 选中数据的回调
-export const selectRow = (selectedRowKeys, selectedRows) => {
-    selectData.selectedRowKeys = selectedRowKeys
-    selectData.selectedRows = selectedRows
-}
+export { useSelectHook }

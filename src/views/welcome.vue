@@ -5,7 +5,18 @@
 -->
 <template>
     <div>
-        <CrudTable :jsonFields="jsonFields" :columns="columns" read del update create :crudApi="demoApi" :modalFormRef="modalFormRef">
+        <CrudTable
+            :jsonFields="jsonFields"
+            :columns="columns"
+            read
+            del
+            update
+            create
+            select
+            :crudApi="demoApi"
+            :modalFormRef="modalFormRef"
+            :timeFields="['time']"
+        >
             <template #modal="{ formData, isEdit }">
                 <Form
                     ref="modalFormRef"
@@ -68,13 +79,20 @@ export default defineComponent({
                 options: [
                     {
                         value: 1,
-                        label: '华南地区'
+                        label: '选择1'
                     },
                     {
                         value: 0,
-                        label: '华东地区'
+                        label: '选择2'
                     }
                 ],
+                rules: []
+            },
+            {
+                label: '时间范围',
+                name: 'time',
+                defaltValue: [],
+                type: 'date',
                 rules: []
             }
         ]
