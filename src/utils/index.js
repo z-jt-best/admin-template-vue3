@@ -68,3 +68,24 @@ export function getRawRoute(route) {
             : undefined
     }
 }
+
+// 转换成xx-xx命名
+export function camelCase(str) {
+    return str.replace(/-(\w)/g, (_, c) => (c ? c.toUpperCase() : ''))
+}
+
+// 转换成小驼峰命名
+export function kebabCase(key) {
+    const result = key.replace(/([A-Z])/g, ' $1').trim()
+    return result.split(' ').join('-').toLowerCase()
+}
+
+// 首字母大写
+export function capitalize(str) {
+    return str.charAt(0).toUpperCase() + str.slice(1)
+}
+
+// 转换成驼峰命名
+export function pascalCase(str) {
+    return capitalize(camelCase(str))
+}
